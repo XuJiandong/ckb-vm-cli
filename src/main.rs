@@ -49,7 +49,12 @@ fn main() {
     machine.load_program(&buffer, &args).unwrap();
     let result = machine.run();
     let cycles = machine.machine.cycles();
-    println!("Cycles = {:?}", cycles);
+    let c: f64 = cycles as f64;
+    if cycles > 1000000 {
+        println!("Cycles = {:.2} M cycles", c / 1000. / 1000.);
+    } else {
+        println!("Cycles = {:.2} K cycles (It's below 1 M)", c / 1000.);
+    }
     if result != Ok(0) {
         println!("Error result: {:?}", result);
         exit(i32::from(result.unwrap_or(-99)));
