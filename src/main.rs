@@ -1,4 +1,5 @@
 mod cost_model;
+mod debugger;
 
 use bytes::Bytes;
 use ckb_vm::machine::asm::{AsmCoreMachine, AsmMachine};
@@ -41,6 +42,7 @@ fn main() {
     let asm_core = AsmCoreMachine::new_with_max_cycles(1 << 31);
     let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
         .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
+        .syscall(Box::new(debugger::Debugger::new()))
         .build();
     let mut machine = AsmMachine::new(core, None);
 

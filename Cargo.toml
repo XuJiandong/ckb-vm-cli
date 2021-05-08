@@ -9,6 +9,5 @@ edition = "2018"
 [dependencies]
 # https://github.com/nervosnetwork/ckb/blob/develop/Cargo.lock
 ckb-vm = {version = "0.19.3", features = ["asm"]}
-bytes = "0.5.4"
+bytes = "1"
 clap = "2.33.3"
-
