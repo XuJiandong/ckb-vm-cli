@@ -4,16 +4,17 @@ mod debugger;
 use bytes::Bytes;
 use ckb_vm::machine::asm::{AsmCoreMachine, AsmMachine};
 use ckb_vm::machine::SupportMachine;
-use ckb_vm::DefaultMachineBuilder;
+use ckb_vm::machine::VERSION1;
+use ckb_vm::{DefaultMachineBuilder, ISA_B, ISA_IMC, ISA_MOP};
 use std::fs::File;
 use std::io::Read;
 use std::process::exit;
 
 fn main() {
     use clap::{App, Arg};
-    let matches = App::new("ckb-vm-cli")
-        .version("0.1")
-        .about("A command line tool for CKB VM")
+    let matches = App::new("ckb-vm-b-cli")
+        .version("0.2")
+        .about("A command line tool for CKB VM, supporting B extension")
         .arg(
             Arg::with_name("bin")
                 .long("bin")
@@ -39,7 +40,8 @@ fn main() {
     let buffer: Bytes = buffer.into();
     let args: Vec<Bytes> = args.into_iter().map(|s| s.into()).collect();
 
-    let asm_core = AsmCoreMachine::new_with_max_cycles(1 << 31);
+    let asm_core = AsmCoreMachine::new(ISA_IMC | ISA_B | ISA_MOP, VERSION1, u64::max_value());
+
     let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
         .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
         .syscall(Box::new(debugger::Debugger::new()))
@@ -51,9 +53,9 @@ fn main() {
     let cycles = machine.machine.cycles();
     let c: f64 = cycles as f64;
     if cycles > 1000000 {
-        println!("Cycles = {:.2} M cycles", c / 1000. / 1000.);
+        println!("Cycles = {:.1} M cycles", c / 1024. / 1024.);
     } else {
-        println!("Cycles = {:.2} K cycles (It's below 1 M)", c / 1000.);
+        println!("Cycles = {:.1} K cycles (It's below 1 M)", c / 1024.);
     }
     if result != Ok(0) {
         println!("Error result: {:?}", result);
