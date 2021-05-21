@@ -37,7 +37,9 @@ fn main() {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
     let buffer: Bytes = buffer.into();
-    let args: Vec<Bytes> = args.into_iter().map(|s| s.into()).collect();
+    let mut args2: Vec<Bytes> = vec![Bytes::copy_from_slice(bin_path.as_ref())];
+    let args_tail: Vec<Bytes> = args.into_iter().map(|s| s.into()).collect();
+    args2.extend(args_tail);
 
     let asm_core = AsmCoreMachine::new_with_max_cycles(1 << 31);
     let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
@@ -46,7 +48,7 @@ fn main() {
         .build();
     let mut machine = AsmMachine::new(core, None);
 
-    machine.load_program(&buffer, &args).unwrap();
+    machine.load_program(&buffer, &args2).unwrap();
     let result = machine.run();
     let cycles = machine.machine.cycles();
     let c: f64 = cycles as f64;
