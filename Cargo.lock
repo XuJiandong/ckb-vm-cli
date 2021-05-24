@@ -53,7 +53,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "ckb-vm"
 version = "0.20.0-alpha"
-source = "git+https://github.com/nervosnetwork/ckb-vm.git?branch=develop#f393f85baeebd3720ae5059f70e04e3911c4f1fd"
+source = "git+https://github.com/nervosnetwork/ckb-vm.git?rev=4200360#42003600d2a3e3dd6be12641fef1f481545ce81a"
 dependencies = [
  "byteorder",
  "bytes",
@@ -81,7 +81,7 @@ dependencies = [
 [[package]]
 name = "ckb-vm-definitions"
 version = "0.20.0-alpha"
-source = "git+https://github.com/nervosnetwork/ckb-vm.git?branch=develop#f393f85baeebd3720ae5059f70e04e3911c4f1fd"
+source = "git+https://github.com/nervosnetwork/ckb-vm.git?rev=4200360#42003600d2a3e3dd6be12641fef1f481545ce81a"
 
 [[package]]
 name = "clap"

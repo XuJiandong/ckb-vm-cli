@@ -1,14 +1,15 @@
-mod cost_model;
-mod debugger;
-
-use bytes::Bytes;
-use ckb_vm::machine::asm::{AsmCoreMachine, AsmMachine};
-use ckb_vm::machine::SupportMachine;
-use ckb_vm::machine::VERSION1;
-use ckb_vm::{DefaultMachineBuilder, ISA_B, ISA_IMC, ISA_MOP};
 use std::fs::File;
 use std::io::Read;
 use std::process::exit;
+
+use bytes::Bytes;
+use ckb_vm::{DefaultMachineBuilder, ISA_B, ISA_IMC, ISA_MOP};
+use ckb_vm::machine::asm::{AsmCoreMachine, AsmMachine};
+use ckb_vm::machine::SupportMachine;
+use ckb_vm::machine::VERSION1;
+
+mod cost_model;
+mod debugger;
 
 fn main() {
     use clap::{App, Arg};
@@ -23,6 +24,13 @@ fn main() {
                 .help("Specify the name of the executable")
                 .required(true),
         )
+        .arg(
+            Arg::with_name("nomop")
+                .long("nomop")
+                .help("Disable mop")
+                .takes_value(false)
+                .required(false),
+        )
         .arg(Arg::with_name("args").multiple(true))
         .get_matches();
 
@@ -32,6 +40,8 @@ fn main() {
         .into_iter()
         .map(|s| s.clone().into())
         .collect();
+
+    let disable_mop = matches.is_present("nomop");
 
     let bin_path = matches.value_of("bin").unwrap();
     let mut file = File::open(bin_path).unwrap();
@@ -43,7 +53,14 @@ fn main() {
     let args3: Vec<Bytes> = args.into_iter().map(|s| s.into()).collect();
     args2.extend(args3);
 
-    let asm_core = AsmCoreMachine::new(ISA_IMC | ISA_B | ISA_MOP, VERSION1, u64::max_value());
+    let mut flags = ISA_IMC | ISA_B;
+    if !disable_mop {
+        flags = flags | ISA_MOP;
+    } else {
+        println!("Warning: MOP is disabled.");
+    }
+
+    let asm_core = AsmCoreMachine::new(flags, VERSION1, u64::max_value());
 
     let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
         .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
