@@ -3,7 +3,7 @@ use std::io::Read;
 use std::process::exit;
 
 use bytes::Bytes;
-use ckb_vm::{DefaultMachineBuilder, ISA_B, ISA_IMC, ISA_MOP};
+use ckb_vm::{DefaultMachineBuilder, ISA_B, ISA_IMC, ISA_MOP, DefaultCoreMachine, WXorXMemory, SparseMemory, TraceMachine};
 use ckb_vm::machine::asm::{AsmCoreMachine, AsmMachine};
 use ckb_vm::machine::SupportMachine;
 use ckb_vm::machine::VERSION1;
@@ -14,7 +14,7 @@ mod debugger;
 fn main() {
     use clap::{App, Arg};
     let matches = App::new("ckb-vm-b-cli")
-        .version("0.2")
+        .version("0.3")
         .about("A command line tool for CKB VM, supporting B extension")
         .arg(
             Arg::with_name("bin")
@@ -31,6 +31,13 @@ fn main() {
                 .takes_value(false)
                 .required(false),
         )
+        .arg(
+            Arg::with_name("noasm")
+                .long("noasm")
+                .help("Disable ASM(x86)")
+                .takes_value(false)
+                .required(false),
+        )
         .arg(Arg::with_name("args").multiple(true))
         .get_matches();
 
@@ -42,6 +49,7 @@ fn main() {
         .collect();
 
     let disable_mop = matches.is_present("nomop");
+    let disable_asm = matches.is_present("noasm");
 
     let bin_path = matches.value_of("bin").unwrap();
     let mut file = File::open(bin_path).unwrap();
@@ -60,17 +68,39 @@ fn main() {
         println!("Warning: MOP is disabled.");
     }
 
-    let asm_core = AsmCoreMachine::new(flags, VERSION1, u64::max_value());
+    let cycles: u64;
+    let result: Result<i8, ckb_vm::Error>;
+    if disable_asm {
+        println!("Warning: Run without ASM");
+        let core_machine = DefaultCoreMachine::<u64, WXorXMemory<SparseMemory<u64>>>::new(
+            flags,
+            VERSION1,
+            u64::max_value(),
+        );
+        let core = DefaultMachineBuilder::new(core_machine)
+            .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
+            .syscall(Box::new(debugger::Debugger::new()))
+            .build();
+        let mut machine = TraceMachine::new(core);
+        machine.load_program(&buffer, &args2).unwrap();
+        result = machine.run();
 
-    let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
-        .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
-        .syscall(Box::new(debugger::Debugger::new()))
-        .build();
-    let mut machine = AsmMachine::new(core, None);
+        cycles = machine.machine.cycles();
+    } else {
+        let asm_core = AsmCoreMachine::new(flags, VERSION1, u64::max_value());
 
-    machine.load_program(&buffer, &args2).unwrap();
-    let result = machine.run();
-    let cycles = machine.machine.cycles();
+        let core = DefaultMachineBuilder::<Box<AsmCoreMachine>>::new(asm_core)
+            .instruction_cycle_func(Box::new(cost_model::instruction_cycles))
+            .syscall(Box::new(debugger::Debugger::new()))
+            .build();
+        let mut machine = AsmMachine::new(core, None);
+
+        machine.load_program(&buffer, &args2).unwrap();
+        result = machine.run();
+
+        cycles = machine.machine.cycles();
+    }
+
     let c: f64 = cycles as f64;
     if cycles > 1000000 {
         println!("Cycles = {:.1} M cycles", c / 1024. / 1024.);
