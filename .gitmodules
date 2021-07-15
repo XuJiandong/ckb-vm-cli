@@ -1,6 +1,0 @@
-[submodule "deps/ckb-vm"]
-	path = deps/ckb-vm
-	url = https://github.com/mohanson/ckb-vm.git
-	branch = adcsbb
-
-
