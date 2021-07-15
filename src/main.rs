@@ -14,7 +14,7 @@ mod debugger;
 fn main() {
     use clap::{App, Arg};
     let matches = App::new("ckb-vm-b-cli")
-        .version("0.3")
+        .version("0.3.1")
         .about("A command line tool for CKB VM, supporting B extension")
         .arg(
             Arg::with_name("bin")

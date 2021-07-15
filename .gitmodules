@@ -1,0 +1,4 @@
+[submodule "deps/ckb-vm"]
+	path = deps/ckb-vm
+	url = https://github.com/nervosnetwork/ckb-vm.git
+	branch = develop
